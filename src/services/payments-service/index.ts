@@ -1,15 +1,21 @@
-import { cannotEnrollBeforeStartDateError, notFoundError } from '@/errors';
+import { notFoundError, unauthorizedError } from '@/errors';
+import enrollmentRepository from '@/repositories/enrollment-repository';
 import paymentRepository from '@/repositories/payments-repository';
 import ticketsRepository from '@/repositories/tickets-repository';
 
 async function getPayment(ticketId: number, userId: number) {
-  if (!ticketId) throw cannotEnrollBeforeStartDateError();
+  const ticket = await ticketsRepository.getTicketById(ticketId);
 
-  const ticketIdExist = await ticketsRepository.getTicketTypeById(ticketId);
-  console.log(ticketIdExist);
-  if (!ticketIdExist) throw notFoundError();
+  if (!ticket) throw notFoundError();
+
+  const enrollment = await enrollmentRepository.findEnrollmentById(ticket.enrollmentId);
+
+  if (!enrollment) throw notFoundError();
+
+  if (enrollment.userId !== userId) throw unauthorizedError();
 
   const payment = await paymentRepository.getPaymentByTicketId(ticketId);
+
   return payment;
 }
 

@@ -9,7 +9,7 @@ export function handleApplicationErrors(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _next: NextFunction,
 ) {
-  if (err.name === 'CannotEnrollBeforeStartDateError') {
+  if (err.name === 'CannotEnrollBeforeStartDateError' || err.name === 'BadRequestError') {
     return res.status(httpStatus.BAD_REQUEST).send({
       message: err.message,
     });
@@ -39,7 +39,6 @@ export function handleApplicationErrors(
     });
   }
 
-  /* eslint-disable-next-line no-console */
   console.error(err.name);
   res.status(httpStatus.INTERNAL_SERVER_ERROR).send({
     error: 'InternalServerError',
