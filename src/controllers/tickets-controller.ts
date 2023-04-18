@@ -5,7 +5,7 @@ import { AuthenticatedRequest } from '@/middlewares';
 import ticketsService from '@/services/tickets-service';
 
 export async function getAllTickets(req: AuthenticatedRequest, res: Response) {
-  const userId = req.userId as number;
+  const { userId } = req as { userId: number };
 
   try {
     const tickets = await ticketsService.getAllTicketsFromUser(userId);
