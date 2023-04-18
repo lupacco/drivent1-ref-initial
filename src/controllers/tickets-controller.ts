@@ -8,7 +8,7 @@ export async function getAllTickets(req: AuthenticatedRequest, res: Response) {
   const userId = req.userId as number;
 
   try {
-    const tickets = await ticketsService.getAllTickets(userId);
+    const tickets = await ticketsService.getAllTicketsFromUser(userId);
     return res.status(httpStatus.OK).send(tickets);
   } catch (error) {
     return res.status(httpStatus.NOT_FOUND).send({});

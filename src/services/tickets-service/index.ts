@@ -6,10 +6,29 @@ async function getTicketsTypes() {
   return await ticketsRepository.getTicketsTypes();
 }
 
-async function getAllTickets(userId: number) {
-  const { id: enrollmentId } = await enrollmentRepository.findEnrollmentByUserId(userId);
+async function getAllTicketsFromUser(userId: number) {
+  const enrollment = await enrollmentRepository.findEnrollmentByUserId(userId);
+
+  if (!enrollment) throw notFoundError();
+
+  const [result] = await ticketsRepository.getAllTicketsByEnrollmentId(enrollment.id);
+
+  if (!result) throw notFoundError();
+
+  return result;
 }
 
-const ticketsService = { getAllTickets, getTicketsTypes };
+async function createTicket(ticket: { ticketTypeId: number; userId: number }) {
+  const { ticketTypeId, userId } = ticket;
+  const enrollment = await enrollmentRepository.findEnrollmentByUserId(userId);
+
+  if (!enrollment) throw notFoundError();
+
+  const result = await ticketsRepository.createTicket({ ticketTypeId, enrollmentId: enrollment.id });
+
+  return result;
+}
+
+const ticketsService = { getTicketsTypes, getAllTicketsFromUser, createTicket };
 
 export default ticketsService;
