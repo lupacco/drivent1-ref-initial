@@ -9,10 +9,10 @@ async function getAllTickets() {
 }
 
 async function getTicketsTypes() {
-  return await prisma.ticket.findMany();
+  return await prisma.ticketType.findMany();
 }
 
-async function create(ticket: { ticketTypeId: number; enrollmentId: number }) {
+async function createTicket(ticket: { ticketTypeId: number; enrollmentId: number }) {
   return await prisma.ticket.create({
     data: {
       ...ticket,
@@ -21,6 +21,6 @@ async function create(ticket: { ticketTypeId: number; enrollmentId: number }) {
   });
 }
 
-const ticketsRepository = { getAllTickets, getTicketsTypes, create };
+const ticketsRepository = { getAllTickets, getTicketsTypes, createTicket };
 
 export default ticketsRepository;
