@@ -3,6 +3,7 @@ import httpStatus from 'http-status';
 import { AuthenticatedRequest } from '@/middlewares';
 import paymentsService from '@/services/payments-service';
 import { badRequestError } from '@/errors/bad-request-error';
+import { PaymentReq } from '@/schemas/payments-schemas';
 
 export async function getPayment(req: AuthenticatedRequest, res: Response) {
   const { ticketId } = req.query;
@@ -20,9 +21,12 @@ export async function getPayment(req: AuthenticatedRequest, res: Response) {
   }
 }
 
-export async function makePayment(req: AuthenticatedRequest, res: Response) {
+export async function processPayment(req: AuthenticatedRequest, res: Response) {
+  const paymentRequest = req.body as PaymentReq;
+  const { userId } = req as { userId: number };
   try {
-    return res.status(httpStatus.OK).send();
+    const payment = await paymentsService.processPayment(paymentRequest, userId);
+    return res.status(httpStatus.OK).send(payment);
   } catch (error) {
     if (error.name === 'NotFoundError') return res.status(httpStatus.NOT_FOUND).send({});
     if (error.name === 'BadRequestError') return res.sendStatus(httpStatus.BAD_REQUEST);
