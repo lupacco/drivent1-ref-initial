@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getPayment, processPayment } from '@/controllers/payments-controller';
+import { getPayment, processPayment } from '@/controllers';
 import { authenticateToken, validateBody } from '@/middlewares';
 import { paymentSchema } from '@/schemas/payments-schemas';
 
