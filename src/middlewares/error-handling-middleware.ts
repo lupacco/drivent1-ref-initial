@@ -39,8 +39,11 @@ export function handleApplicationErrors(
     });
   }
 
-  console.error(err.name);
-  res.status(httpStatus.INTERNAL_SERVER_ERROR).send({
+  if (err.name === 'PaymentRequiredError') {
+    return res.status(httpStatus.PAYMENT_REQUIRED).send({ message: err.message });
+  }
+
+  return res.status(httpStatus.INTERNAL_SERVER_ERROR).send({
     error: 'InternalServerError',
     message: 'Internal Server Error',
   });
