@@ -3,7 +3,7 @@ import * as jwt from 'jsonwebtoken';
 import supertest from 'supertest';
 import { TicketStatus } from '@prisma/client';
 import { cleanDb, generateValidToken } from '../helpers';
-import { createEnrollmentWithAddress, createTicket, createTicketType, createUser } from '../factories';
+import { createEnrollmentWithAddress, createRemoteTicketType, createTicket, createTicketType, createTicketTypeWithoutHotel, createUser } from '../factories';
 import { createHotel } from '../factories/hotels-factory';
 import { createRoom } from '../factories/room-factory';
 import app, { init } from '@/app';
@@ -111,6 +111,54 @@ describe('GET /hotels/:hotelId', () => {
       const response = await server.get(`/hotels/9999999`).set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toEqual(404);
+    });
+
+    it('should return status 402 when ticket is not PAID', async () => {
+      const user = await createUser();
+      const token = await generateValidToken(user);
+
+      const enrollment = await createEnrollmentWithAddress(user);
+
+      const ticketType = await createTicketType();
+      const ticket = await createTicket(enrollment.id, ticketType.id, TicketStatus.RESERVED);
+
+      const createdHotel = await createHotel();
+      const createdRoom = await createRoom(createdHotel.id);
+
+      const response = await server.get(`/hotels/${createdHotel.id}`).set('Authorization', `Beare ${token}`);
+      expect(response.status).toEqual(httpStatus.PAYMENT_REQUIRED);
+    });
+
+    it('should return status 402 when ticket type is remote', async () => {
+      const user = await createUser();
+      const token = await generateValidToken(user);
+
+      const enrollment = await createEnrollmentWithAddress(user);
+
+      const ticketType = await createRemoteTicketType();
+      const ticket = await createTicket(enrollment.id, ticketType.id, TicketStatus.PAID);
+
+      const createdHotel = await createHotel();
+      const createdRoom = await createRoom(createdHotel.id);
+
+      const response = await server.get(`/hotels/${createdHotel.id}`).set('Authorization', `Beare ${token}`);
+      expect(response.status).toEqual(httpStatus.PAYMENT_REQUIRED);
+    });
+
+    it('should return status 402 when ticketType do not include hotel', async () => {
+      const user = await createUser();
+      const token = await generateValidToken(user);
+
+      const enrollment = await createEnrollmentWithAddress(user);
+
+      const ticketType = await createTicketTypeWithoutHotel();
+      const ticket = await createTicket(enrollment.id, ticketType.id, TicketStatus.PAID);
+
+      const createdHotel = await createHotel();
+      const createdRoom = await createRoom(createdHotel.id);
+
+      const response = await server.get(`/hotels/${createdHotel.id}`).set('Authorization', `Beare ${token}`);
+      expect(response.status).toEqual(httpStatus.PAYMENT_REQUIRED);
     });
 
     it('should return hotel with all rooms available when hotelId is given', async () => {

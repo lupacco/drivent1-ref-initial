@@ -18,6 +18,10 @@ async function getHotelById(hotelId: number, userId: number) {
   if (!ticket) throw notFoundError();
   if (ticket.status !== 'PAID') throw paymentRequiredError();
 
+  const ticketType = await ticketsRepository.getTicketTypeById(ticket.ticketTypeId);
+  if (ticketType.isRemote) throw paymentRequiredError(); // Error can be more specific
+  if (!ticketType.includesHotel) throw paymentRequiredError();
+
   const hotel = await hotelsRepository.getHotelById(hotelId);
 
   if (!hotel) throw notFoundError();
