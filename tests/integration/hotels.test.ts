@@ -3,7 +3,14 @@ import * as jwt from 'jsonwebtoken';
 import supertest from 'supertest';
 import { TicketStatus } from '@prisma/client';
 import { cleanDb, generateValidToken } from '../helpers';
-import { createEnrollmentWithAddress, createRemoteTicketType, createTicket, createTicketType, createTicketTypeWithoutHotel, createUser } from '../factories';
+import {
+  createEnrollmentWithAddress,
+  createRemoteTicketType,
+  createTicket,
+  createTicketType,
+  createTicketTypeWithoutHotel,
+  createUser,
+} from '../factories';
 import { createHotel } from '../factories/hotels-factory';
 import { createRoom } from '../factories/room-factory';
 import app, { init } from '@/app';
@@ -43,15 +50,89 @@ describe('GET /hotels', () => {
   });
 
   describe('when token is valid', () => {
-    it('should return empty array if no Hotels were created already', async () => {
-      const token = await generateValidToken();
+    it('should return status 404 if enrollment do not exist', async () => {
+      const user = await createUser();
+      const token = await generateValidToken(user);
       const response = await server.get('/hotels').set('Authorization', `Beare ${token}`);
 
-      expect(response.body).toEqual([]);
+      expect(response.status).toEqual(httpStatus.NOT_FOUND);
+    });
+
+    it('should return status 404 if ticket do not exist', async () => {
+      const user = await createUser();
+      const token = await generateValidToken(user);
+
+      const enrollment = await createEnrollmentWithAddress(user);
+      const response = await server.get('/hotels').set('Authorization', `Beare ${token}`);
+
+      expect(response.status).toEqual(httpStatus.NOT_FOUND);
+    });
+
+    it('should return status 402 if ticket is not PAID', async () => {
+      const user = await createUser();
+      const token = await generateValidToken(user);
+
+      const enrollment = await createEnrollmentWithAddress(user);
+
+      const ticketType = await createTicketType();
+      const ticket = await createTicket(enrollment.id, ticketType.id, TicketStatus.RESERVED);
+
+      const response = await server.get('/hotels').set('Authorization', `Beare ${token}`);
+
+      expect(response.status).toEqual(httpStatus.PAYMENT_REQUIRED);
+    });
+
+    it('should return status 402 if ticket type is remote', async () => {
+      const user = await createUser();
+      const token = await generateValidToken(user);
+
+      const enrollment = await createEnrollmentWithAddress(user);
+
+      const ticketType = await createRemoteTicketType();
+      const ticket = await createTicket(enrollment.id, ticketType.id, TicketStatus.PAID);
+
+      const response = await server.get('/hotels').set('Authorization', `Beare ${token}`);
+
+      expect(response.status).toEqual(httpStatus.PAYMENT_REQUIRED);
+    });
+
+    it('should return status 402 if ticket type does not include hotel', async () => {
+      const user = await createUser();
+      const token = await generateValidToken(user);
+
+      const enrollment = await createEnrollmentWithAddress(user);
+
+      const ticketType = await createTicketTypeWithoutHotel();
+      const ticket = await createTicket(enrollment.id, ticketType.id, TicketStatus.PAID);
+
+      const response = await server.get('/hotels').set('Authorization', `Beare ${token}`);
+
+      expect(response.status).toEqual(httpStatus.PAYMENT_REQUIRED);
+    });
+
+    it('should return status 404 if no Hotels were created already', async () => {
+      const user = await createUser();
+      const token = await generateValidToken(user);
+
+      const enrollment = await createEnrollmentWithAddress(user);
+
+      const ticketType = await createTicketType();
+      const ticket = await createTicket(enrollment.id, ticketType.id, TicketStatus.PAID);
+
+      const response = await server.get('/hotels').set('Authorization', `Beare ${token}`);
+
+      expect(response.status).toEqual(httpStatus.NOT_FOUND);
     });
 
     it('should return status 200 and with existing Hotels data', async () => {
-      const token = await generateValidToken();
+      const user = await createUser();
+      const token = await generateValidToken(user);
+
+      const enrollment = await createEnrollmentWithAddress(user);
+
+      const ticketType = await createTicketType();
+      const ticket = await createTicket(enrollment.id, ticketType.id, TicketStatus.PAID);
+
       await createHotel();
 
       const response = await server.get('/hotels').set('Authorization', `Beare ${token}`);
